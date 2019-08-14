@@ -1,0 +1,31 @@
+branches:
+  only:
+    - master
+language: node_js
+node_js:
+  - '10'
+  - '12'
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
+  - export PATH="$(yarn global bin):$PATH"
+cache: yarn
+install:
+  - yarn --frozen-lockfile
+script: yarn test-coverage
+
+stages:
+  - name: test
+  - name: release
+    if:
+      env(GH_TOKEN) is present AND (NOT fork) AND branch = master AND type =
+      push AND (NOT (commit_message =~ /skip-release/ ) )
+jobs:
+  include:
+    - stage: release
+      node_js: lts/*
+      script: skip
+      deploy:
+        provider: script
+        skip_cleanup: true
+        script:
+          - yarn semantic-release
